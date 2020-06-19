@@ -1,6 +1,9 @@
 import sys
 import pandas as pd
 from sqlalchemy import create_engine
+import time
+import pickle
+
 # for tokenizing
 import nltk
 nltk.download(['punkt', 'wordnet'])
@@ -8,6 +11,7 @@ import re
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 url_regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+
 # for feature extraction and modeling
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
@@ -16,16 +20,19 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
 from xgboost import XGBClassifier
-import time
 from sklearn.metrics import classification_report
-import pickle
 
 def load_data(database_filepath):
+    """
+    Read the input database to create and return separate numpy arrays for
+    messages, category values, and names of categories respectively
+    """
+    
     # creating sqlite engine to interact with database
     engine = create_engine('sqlite:///'+database_filepath)
     df = pd.read_sql_table("disaster_message_categories",engine)
     
-    # separating training and labels data and list of categories
+    # separating training and labels data and list of category names
     X = df.message.values
     Y_df = df[['related', 'request', 'offer', 'aid_related', 'medical_help', \
             'medical_products', 'search_and_rescue', 'security', 'military',\
@@ -42,18 +49,22 @@ def load_data(database_filepath):
     return X,Y,category_names
 
 def tokenize(text):
-    # get list of all urls using regex
+    """
+    Perform following steps for tokeninzing input text string: 
+    - get list of all urls using regex
+    - replace each url in text string with placeholder
+    - tokenize text using nltk
+    - for each token, lemmatize, normalize case, and remove leading/trailing white space
+
+    """
+
     detected_urls = re.findall(url_regex, text)
     
-    # replace each url in text string with placeholder
     for url in detected_urls:
         text = text.replace(url, "urlplaceholder")
     
-    # tokenize text
     tokens = word_tokenize(text)
     
-    # for each token, 
-    # lemmatize, normalize case, and remove leading/trailing white space
     lemmatizer = WordNetLemmatizer()
     clean_tokens = []
     for tok in tokens:
@@ -63,6 +74,14 @@ def tokenize(text):
     return clean_tokens
 
 def build_model():
+    """
+    Create a ML pipeline with a tokenizer, a feature constructor,
+    and a multi output classifier with either Random Forest or
+    XGBoost. 
+    
+    Commenting RandomForest pipeline because XGBoost pipeline is 
+    quicker in training. 
+    """
     # create pipeline with desired transformers and ML methods
 #     pipeline = Pipeline([
 #                 ('vect', CountVectorizer(tokenizer=tokenize,
@@ -75,7 +94,7 @@ def build_model():
 #                 )
 #             ])
     
-    # Alternative for faster training
+    # alternative for faster training
     pipeline = Pipeline([
                 ('vect', CountVectorizer(tokenizer=tokenize)),
                 ('tfidf', TfidfTransformer()),                
@@ -91,9 +110,16 @@ def build_model():
     return pipeline
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    """
+    Using input testing data X_test and groundtruth Y_test:
+    - Report f1 score, precision and recall of input model 
+    for each output category.
+    - Report overall acuuracy of the model. 
+    """
+    
     # make predictions for test set
     y_pred = model.predict(X_test)
-    # report f1 score, precision and recall for each output category
+    
     for i in range(0,len(Y_test[0,:])):
         print(classification_report(Y_test[:,i], y_pred[:,i]))
     
@@ -103,7 +129,7 @@ def evaluate_model(model, X_test, Y_test, category_names):
     return None
     
 def save_model(model, model_filepath):
-    # save the model at a desired location
+    """ save the model at a desired location """
     pickle.dump(model, open(model_filepath, 'wb'))
     return None
 

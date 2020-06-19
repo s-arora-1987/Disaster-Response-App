@@ -3,7 +3,9 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 def load_data(messages_filepath, categories_filepath):
-
+    """ Create a pandas dataframe by merging the messages and catgories
+    data stored at input paths"""
+    
     # load messages and categories datasets
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
@@ -14,17 +16,22 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
-
-    # create a dataframe of individual category columns
+    """ 
+    Perform following steps for cleaning input data:
+     1- create a dataframe of with individual categories as columns
+     2- convert category values to just numbers 0 or 1
+     3- drop duplicate rows
+    """
+    
+    # Step 1
     categories = df["categories"].str.split(pat=';',expand=True)
     # select the first row of the categories dataframe
-    row = categories.loc[0,:]
     # use this row to extract a list of new column names for categories.
+    row = categories.loc[0,:]
     category_colnames = row.apply(lambda strin: strin[:-2]).to_list()
-    # rename the columns of `categories`
     categories.columns = category_colnames
     
-    # Convert category values to just numbers 0 or 1
+    # Step 2
     for column in categories:
         # set each value to be the last character of the string
         categories[column] = categories[column].astype(str).\
@@ -33,17 +40,17 @@ def clean_data(df):
         # convert column from string to numeric
         categories[column] = categories[column].astype(int)
     
-    # drop the original categories column from `df`
     df.drop(columns=['categories'],inplace=True)
     # concatenate the original dataframe with the new `categories` dataframe
     df=pd.concat([df,categories],axis=1)
-    # drop duplicate rows
+    
+    # Step 3
     df.drop_duplicates(inplace=True)
     return df
 
 def save_data(df, database_filename):
-    # Save the clean dataset into an sqlite database
-    # table name disaster_message_categories
+    """ Save the input dataframe into a table named disaster_message_categories
+    in an sqlite database """
     engine = create_engine('sqlite:///'+database_filename)
     df.to_sql('disaster_message_categories', engine, index=False)
     return None

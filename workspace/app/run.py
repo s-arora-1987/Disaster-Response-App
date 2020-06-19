@@ -17,6 +17,12 @@ engine = create_engine('sqlite:///../data/DisasterResponse.db')
 df = pd.read_sql_table('disaster_message_categories', engine)
 
 def tokenize(text):
+    """ 
+    Already explained in train_classifier.py
+    
+    This function is included here to facilitate the loading of
+    pickle file. 
+    """
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
 
@@ -38,10 +44,13 @@ app = Flask(__name__)
 @app.route('/index')
 def index():
     
-    # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
+   """ 
+   using dataframe df, extract data needed for visuals 
+   create ploty graphs and render them on webpage as JSON
+   
+   """
     
-    # Plot 1
+    # ................. Plot 1 .............................
     # create a histogram of messages counts in each category, sorted in descending order 
     category_names = ['related', 'request', 'offer', 'aid_related', 'medical_help', \
             'medical_products', 'search_and_rescue', 'security', 'military',\
@@ -56,7 +65,7 @@ def index():
     # retrieve the category name for descending order 
     category_sequence_changed = list(category_counts.index)
     
-    # Plot 2
+    # ................. Plot 2 .............................
     # compute the number of messages in each genre
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
@@ -77,7 +86,7 @@ def index():
             ],
 
             'layout': {
-                'title': 'Distribution of Message Categories So Far',
+                'title': 'Distribution of messages used for training',
                 'yaxis': {
                     'title': "Count"
                 },
@@ -103,7 +112,7 @@ def index():
             ],
 
             'layout': {
-                'title': 'Distribution of message by genre and \'aid related\' class ',
+                'title': 'Distribution of messages associated with and not associated with aid, grouped by genre',
                 'yaxis': {
                     'title': "Count"
                 },
