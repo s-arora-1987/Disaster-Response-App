@@ -2,6 +2,28 @@
 An application for categorizing the disaster events based on messages
 
 
+Dependencies:
+
+pandas
+
+sqlalchemy
+
+nltk
+
+sklearn
+
+xgboost
+
+pickle
+
+json
+
+plotly
+
+flask
+
+
+
 ### Instructions:
 1. Run the following commands in the project's root directory to set up your database and model.
 

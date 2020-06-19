@@ -10,9 +10,11 @@ from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
 from sklearn.externals import joblib
 from sqlalchemy import create_engine
+import sqlite3
 
-
-app = Flask(__name__)
+# load data
+engine = create_engine('sqlite:///../data/DisasterResponse.db')
+df = pd.read_sql_table('disaster_message_categories', engine)
 
 def tokenize(text):
     tokens = word_tokenize(text)
@@ -25,13 +27,11 @@ def tokenize(text):
 
     return clean_tokens
 
-# load data
-engine = create_engine('sqlite:///../data/YourDatabaseName.db')
-df = pd.read_sql_table('YourTableName', engine)
 
 # load model
-model = joblib.load("../models/your_model_name.pkl")
+model = joblib.load("../models/classifier.pkl")
 
+app = Flask(__name__)
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
@@ -40,29 +40,79 @@ def index():
     
     # extract data needed for visuals
     # TODO: Below is an example - modify to extract data for your own visuals
+    
+    # Plot 1
+    # create a histogram of messages counts in each category, sorted in descending order 
+    category_names = ['related', 'request', 'offer', 'aid_related', 'medical_help', \
+            'medical_products', 'search_and_rescue', 'security', 'military',\
+            'child_alone', 'water', 'food', 'shelter', 'clothing', 'money', \
+            'missing_people', 'refugees', 'death', 'other_aid', \
+            'infrastructure_related', 'transport', 'buildings', 'electricity'\
+            , 'tools', 'hospitals', 'shops', 'aid_centers', \
+            'other_infrastructure', 'weather_related', 'floods', 'storm', \
+            'fire', 'earthquake', 'cold', 'other_weather', 'direct_report'\
+           ]
+    category_counts = (df[category_names].sum()/len(df)).sort_values(ascending = False)
+    # retrieve the category name for descending order 
+    category_sequence_changed = list(category_counts.index)
+    
+    # Plot 2
+    # compute the number of messages in each genre
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
+    # dividing the message count for each genre on the basis of association with aid
+    aid_rel0 = df[df['aid_related']==0].groupby('genre').count()['message']
+    aid_rel1 = df[df['aid_related']==1].groupby('genre').count()['message']
+
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
         {
             'data': [
                 Bar(
-                    x=genre_names,
-                    y=genre_counts
+                    x=category_sequence_changed,
+                    y=category_counts
                 )
             ],
 
             'layout': {
-                'title': 'Distribution of Message Genres',
+                'title': 'Distribution of Message Categories So Far',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Category"
+                }
+            }
+        },
+        {
+
+           'data': [
+                Bar(
+                    x=genre_names,
+                    y=aid_rel1,
+                    name = 'Aid related'
+
+                ),
+                Bar(
+                    x=genre_names,
+                    y= aid_rel0,
+                    name = 'Aid not related'
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of message by genre and \'aid related\' class ',
                 'yaxis': {
                     'title': "Count"
                 },
                 'xaxis': {
                     'title': "Genre"
-                }
+                },
+                'barmode' : 'group'
             }
+
         }
     ]
     
