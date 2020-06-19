@@ -4,7 +4,7 @@ The purpose of this project is to create a web application for categorizing the 
 
 #### Example Insight: Histogram for messages so far in different categories
 
-!(/Images/histogram.png)
+!{AltText](/Images/histogram.png)
 
 
 Dependencies:
