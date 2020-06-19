@@ -1,5 +1,10 @@
-# Disaster-Response-App
-An application for categorizing the disaster events based on messages
+## Disaster-Response-App
+
+The purpose of this project is to create a web application for categorizing the disaster events based on messages. Two csv files have data containing messages/tweets during real-life disasters, and the categories messages can be divided in (aid related, search & rescue, water, medical help, .. etc). After some pre-processing in file workspace/data/process_data.py, that data is saved in a SQL database called DisasterResponse. The details of this code are in ETL_Pipeline_Preparation notebook. The code in file workspace/data/train_classifier.py uses saved data to train a multi output classifier and saves result in pickle format; a detailed code for training classifier and tuning hyperparameters is in ML_Pipeline_Preparation notebook. File workspace/app/run.py creates a Flask web app to visualize some insights about of dataset, and to predict the category of input message using the classifier trained in workspace/data/train_classifier.py
+
+#### Example Insight: Histogram for messages so far in different categories
+
+!(/Images/histogram.png)
 
 
 Dependencies:
